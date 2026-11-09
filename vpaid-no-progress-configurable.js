@@ -16,6 +16,8 @@
  *                         at this point. Default: never skippable.
  *   stallAfterSeconds     If set, the ad freezes at this point: video pauses, no more quartiles, and it
  *                         never stops itself. Simulates a stuck creative. Default: never stalls.
+ *   renderSkipButton      true = the creative draws its own skip button once skippable (like real
+ *                         skippable VPAIDs, since IMA doesn't draw one for VPAID). Default: false.
  */
 
 const DEFAULT_DURATION_SECONDS = 15;
@@ -60,6 +62,7 @@ const VpaidNoProgress = function () {
   this.stallTimer_ = null;
   this.stalled_ = false;
   this.stopped_ = false;
+  this.skipButton_ = null;
 };
 
 VpaidNoProgress.prototype.handshakeVersion = function () {
@@ -91,11 +94,25 @@ VpaidNoProgress.prototype.initAd = function (width, height, viewMode, desiredBit
   );
   this.updateVideoSlot_();
   this.videoSlot_.loop = true;
+  // IMA's video element doesn't reliably honour loop, so restart the clip ourselves when it ends.
+  this.videoSlot_.addEventListener('ended', this.restartVideo_.bind(this), false);
   this.videoSlot_.addEventListener('timeupdate', this.timeUpdateHandler_.bind(this), false);
   if (this.slot_) {
     this.slot_.addEventListener('click', this.clickAd_.bind(this), false);
   }
   this.callEvent_('AdLoaded');
+};
+
+VpaidNoProgress.prototype.restartVideo_ = function () {
+  if (this.stopped_ || this.stalled_ || !this.videoSlot_) {
+    return;
+  }
+  this.log('video ended, restarting clip');
+  this.videoSlot_.currentTime = 0;
+  const playResult = this.videoSlot_.play();
+  if (playResult && typeof playResult.catch === 'function') {
+    playResult.catch((e) => this.log('video.play() rejected on restart: ' + e));
+  }
 };
 
 VpaidNoProgress.prototype.clickAd_ = function () {
@@ -166,6 +183,38 @@ VpaidNoProgress.prototype.becomeSkippable_ = function () {
   this.log('now skippable');
   this.attributes_.skippableState = true;
   this.callEvent_('AdSkippableStateChange');
+  if (this.parameters_.renderSkipButton === true) {
+    this.renderSkipButton_();
+  }
+};
+
+// IMA does not draw a skip button for VPAID; real skippable VPAIDs draw their own. Opt-in via
+// AdParameters.renderSkipButton so the default still tests whether OUR player shows one.
+VpaidNoProgress.prototype.renderSkipButton_ = function () {
+  if (!this.slot_ || this.skipButton_) {
+    return;
+  }
+  const button = document.createElement('button');
+  button.textContent = 'Skip ad (creative)';
+  button.style.cssText =
+    'position:absolute;right:16px;bottom:16px;z-index:2147483647;padding:8px 14px;' +
+    'background:rgba(0,0,0,.75);color:#fff;border:1px solid #fff;font:14px sans-serif;cursor:pointer;';
+  button.addEventListener('click', (e) => {
+    e.stopPropagation();
+    this.skipAd();
+  }, false);
+  if (!this.slot_.style.position) {
+    this.slot_.style.position = 'relative';
+  }
+  this.slot_.appendChild(button);
+  this.skipButton_ = button;
+};
+
+VpaidNoProgress.prototype.removeSkipButton_ = function () {
+  if (this.skipButton_ && this.skipButton_.parentNode) {
+    this.skipButton_.parentNode.removeChild(this.skipButton_);
+  }
+  this.skipButton_ = null;
 };
 
 // Freeze: video pauses, no further quartiles, and the ad never ends on its own.
@@ -185,6 +234,7 @@ VpaidNoProgress.prototype.clearTimers_ = function () {
   clearTimeout(this.finishTimer_);
   clearTimeout(this.skippableTimer_);
   clearTimeout(this.stallTimer_);
+  this.removeSkipButton_();
 };
 
 VpaidNoProgress.prototype.finishAd_ = function () {
