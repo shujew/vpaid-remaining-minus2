@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="3.0">
+  <Ad id="VpaidNoProgress120sSkippableOwnButton">
+    <InLine>
+      <AdSystem>CrazyGames Test</AdSystem>
+      <AdTitle>Case D: VPAID plays but never reports progress (120s, skippable after 5s, renders its own skip button)</AdTitle>
+      <Error><![CDATA[http://myErrorURL/error]]></Error>
+      <Impression><![CDATA[]]></Impression>
+      <Creatives>
+        <Creative id="vpaid-no-progress-120s-skip-own-button" AdID="vpaid-no-progress-120s-skip-own-button" sequence="1">
+          <Linear skipoffset="00:00:05">
+            <Duration>00:02:00</Duration>
+            <TrackingEvents>
+              <Tracking event="creativeView"><![CDATA[]]></Tracking>
+              <Tracking event="start"><![CDATA[]]></Tracking>
+              <Tracking event="firstQuartile"><![CDATA[]]></Tracking>
+              <Tracking event="midpoint"><![CDATA[]]></Tracking>
+              <Tracking event="thirdQuartile"><![CDATA[]]></Tracking>
+              <Tracking event="complete"><![CDATA[]]></Tracking>
+              <Tracking event="skip"><![CDATA[]]></Tracking>
+            </TrackingEvents>
+            <AdParameters><![CDATA[{"durationSeconds":120,"skippableAfterSeconds":5,"renderSkipButton":true,"videos":[{"url":"https://s3.amazonaws.com/files.prebid.org/creatives/PrebidLogo.mp4","mimetype":"video/mp4"}]}]]></AdParameters>
+            <VideoClicks>
+              <ClickThrough><![CDATA[http://prebid.org/]]></ClickThrough>
+              <ClickTracking><![CDATA[]]></ClickTracking>
+            </VideoClicks>
+            <MediaFiles>
+              <MediaFile delivery="progressive" width="640" height="480" type="application/javascript" apiFramework="VPAID"><![CDATA[https://cdn.jsdelivr.net/gh/shujew/vpaid-remaining-minus2@main/vpaid-no-progress-configurable.js]]></MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>
